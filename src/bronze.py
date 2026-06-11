@@ -22,10 +22,10 @@ def get_all_ciks():
             # Pad CIK menjadi 10 digit string (misal: 320193 -> '0000320193')
             cik_padded = str(value['cik_str']).zfill(10)
             ciks_list.append(cik_padded)
+            
+            print(f"Ingestion sukses: {data.get('name')}")
         return ciks_list
         
-        print(f"Ingestion sukses: {data.get('name')}")
-    
     except Exception as e:
         print(f"Gagal mengambil daftar CIK: {str(e)}")
         return []
@@ -44,6 +44,8 @@ def fetch_and_save_to_s3(cik, user_email, bucket_name):
     response = requests.get(company_data_url, headers=headers)
     response.raise_for_status()
     data = response.json()
+
+    ticker = data.get('ticker', 'UNKNOWN')
     
     s3 = boto3.client('s3')
     file_name = f"bronze/sec_data_{ticker}_{cik}.json"
