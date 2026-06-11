@@ -5,7 +5,7 @@ import boto3
 import time
 
 def get_all_ciks():
-    ticker_url = "[https://www.sec.gov/files/company_tickers.json](https://www.sec.gov/files/company_tickers.json)"
+    ticker_url = "[https://www.sec.gov/files/company_tickers.json](https://www.sec.gov/files/company_tickers_exchange.json)"
     headers = {
         'User-Agent': f'RaksaProject ({user_email})',
         'Accept-Encoding': 'gzip, deflate',
@@ -15,19 +15,22 @@ def get_all_ciks():
     try:
         response = requests.get(ticker_url, headers=headers)
         response.raise_for_status()
-        data = response.json()
+        raw_data = response.json()
 
-        ciks_list = []
-        for key, value in data.items():
-            # Pad CIK menjadi 10 digit string (misal: 320193 -> '0000320193')
-            cik_padded = str(value['cik_str']).zfill(10)
-            ciks_list.append(cik_padded)
-            
-            print(f"Ingestion sukses: {data.get('name')}")
-        return ciks_list
-        
+        fields = raw_data["fields"]
+        cik_idx = fields.index("cik")
+        exchange_idx = fields.index("exchange")
+
+        nasdaq_ciks = []
+        for row in raw_data["data"]:
+            if str(row[exchange_idx]).lower() == "nasdaq":
+                cik_padded = str(row[cik_idx]).zfill(10)
+                nasdaq_ciks.append(cik_padded)
+
+        return nasdaq_ciks
+
     except Exception as e:
-        print(f"Gagal mengambil daftar CIK: {str(e)}")
+        print(f"Gagal mengambil daftar CIK Nasdaq: {str(e)}")
         return []
 
 def fetch_and_save_to_s3(cik, user_email, bucket_name):
