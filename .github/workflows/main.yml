@@ -34,8 +34,11 @@ jobs:
         zip -r ../bundle.zip .
 
     - name: Identifikasi AWS Account
+      env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
       run: |
-          # Perintah ini akan mencetak ID akun yang sedang digunakan oleh action
           aws sts get-caller-identity
 
     - name: Deploy to Lambda
