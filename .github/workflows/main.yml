@@ -33,6 +33,11 @@ jobs:
         cd src
         zip -r ../bundle.zip .
 
+    - name: Identifikasi AWS Account
+      run: |
+          # Perintah ini akan mencetak ID akun yang sedang digunakan oleh action
+          aws sts get-caller-identity
+
     - name: Deploy to Lambda
       uses: appleboy/lambda-action@v0.1.9
       with:
