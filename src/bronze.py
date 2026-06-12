@@ -5,7 +5,7 @@ import boto3
 import time
 
 def get_all_ciks():
-    ticker_url = "[https://www.sec.gov/files/company_tickers.json](https://www.sec.gov/files/company_tickers_exchange.json)"
+    ticker_url = "https://www.sec.gov/files/company_tickers_exchange.json"
     headers = {
         'User-Agent': f'RaksaProject ({user_email})',
         'Accept-Encoding': 'gzip, deflate',
