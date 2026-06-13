@@ -52,14 +52,12 @@ jobs:
 
     - name: Trigger Lambda Function
       run: |
-        INPUT_CIK="${{ github.event.inputs.target_cik }}"
+        INPUT_CIK=$(echo "${{ github.event.inputs.target_cik }}" | tr '[:upper:]' '[:lower:]')
         
-        if [ -z "$INPUT_CIK" ]; then
+        if [ -z "$INPUT_CIK" ] || [ "$INPUT_CIK" == "auto" ]; then
           echo "{}" > payload.json
-        elif [ -n "$INPUT_CIK" ]; then
-          echo "{\"cik\": \"$INPUT_CIK\"}" > payload.json
         else
-          echo "{}" > payload.json
+          echo "{\"cik\": \"$INPUT_CIK\"}" > payload.json
         fi
 
         echo "--- Isi payload.json ---"
