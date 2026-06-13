@@ -26,6 +26,10 @@ def get_all_ciks():
         exchange_idx = fields.index("exchange")
 
         nasdaq_ciks = []
+        fields = raw_data["fields"]
+        cik_idx = fields.index("cik")
+        exchange_idx = fields.index("exchange")
+        
         for row in raw_data["data"]:
             exchange_val = str(row[exchange_idx]).lower()
             if "nasdaq" in exchange_val:
