@@ -74,6 +74,8 @@ def fetch_and_save_to_s3(cik, user_email, bucket_name):
 
 
 def handler(event, context):
+    print(f"DEBUG: Event received: {json.dumps(event)}") 
+    
     user_email = os.environ.get('SEC_EMAIL')
     bucket_name = 'config-elt-bucket'
     raw_cik = event.get('cik')
@@ -86,6 +88,8 @@ def handler(event, context):
             # Skenario 1: Hanya proses CIK yang dikirim dari payload CLI
             print(f"Memproses CIK spesifik dari payload: {specific_cik}")
             cik_padded = str(specific_cik).zfill(10) 
+
+            company_name = fetch_and_save_to_s3(cik_padded, user_email, bucket_name)
             
             return {
                 'statusCode': 200,
