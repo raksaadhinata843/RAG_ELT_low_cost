@@ -51,7 +51,7 @@ def fetch_and_save_to_s3(cik, user_email, bucket_name):
     ticker = data.get('ticker', 'UNKNOWN')
     
     s3 = boto3.client('s3')
-    file_name = f"bronze/sec_data_{ticker}_{cik}.json"
+    file_name = f"bronze/YYYY-MM-DD/sec_data_{ticker}_{cik}.json"
     
     s3.put_object(
         Bucket=bucket_name,
