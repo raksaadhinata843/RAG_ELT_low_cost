@@ -7,13 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       target_cik:
-        description: 'Pilih mode eksekusi'
+        description: 'Drop CIK or Blank it'
         required: false
         default: 'auto'
-        type: choice # Jika ingin memberikan pilihan tetap
-        options:
-        - auto
-        - 0000320193
   schedule:
     - cron: '0 0 * * 5'
 
