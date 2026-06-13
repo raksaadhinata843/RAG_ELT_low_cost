@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       target_cik:
-        description: 'Masukkan CIK atau ketik "AUTO" untuk proses batch'
+        description: 'Drop CIK or blank it'
         required: false
         default: '0000320193'   
   schedule:
