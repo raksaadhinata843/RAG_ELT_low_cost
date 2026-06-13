@@ -9,7 +9,6 @@ on:
       target_cik:
         description: 'Drop CIK or blank it'
         required: false
-        default: '0000320193'   
   schedule:
     - cron: '0 0 * * 5'
 
@@ -52,21 +51,25 @@ jobs:
 
     - name: Trigger Lambda Function
       run: |
-        USER_INPUT="${{ github.event.inputs.target_cik }}"
+        INPUT_CIK="${{ github.event.inputs.target_cik }}"
         
-        if [ -z "$USER_INPUT" ]; then
-          echo "Nothing Input, Activate AUTO Mode..."
-          TARGET="auto"
+        # Jika input kosong atau 'auto' (case insensitive), set ke auto
+        if [[ -z "$INPUT_CIK" || "${INPUT_CIK,,}" == "auto" ]]; then
+          echo '{"cik": "auto"}' > payload.json
         else
-          TARGET=$(echo "$USER_INPUT" | tr '[:upper:]' '[:lower:]')
+          # Pakai jq untuk memastikan JSON valid dan aman dari karakter aneh
+          jq -n --arg cik "$INPUT_CIK" '{cik: $cik}' > payload.json
         fi
-        
-        echo "{\"cik\": \"$TARGET\"}" > payload.json
-        
+
         echo "--- Isi payload.json ---"
         cat payload.json
         
-        aws lambda invoke --function-name lambda_ingest --payload file://payload.json --cli-binary-format raw-in-base64-out response.json
+        aws lambda invoke \
+          --function-name lambda_ingest \
+          --payload file://payload.json \
+          --cli-binary-format raw-in-base64-out \
+          response.json
+          
         echo "--- Lambda Response ---"
         cat response.json
       env:
