@@ -27,10 +27,12 @@ def get_all_ciks():
 
         nasdaq_ciks = []
         for row in raw_data["data"]:
-            if str(row[exchange_idx]).lower() == "nasdaq":
+            exchange_val = str(row[exchange_idx]).lower()
+           if "nasdaq" in exchange_val:
                 cik_padded = str(row[cik_idx]).zfill(10)
                 nasdaq_ciks.append(cik_padded)
-
+               
+        print(f"DEBUG: Total Nasdaq CIKs found: {len(nasdaq_ciks)}")
         return nasdaq_ciks
 
     except Exception as e:
