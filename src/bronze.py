@@ -62,35 +62,36 @@ def fetch_and_save_to_s3(cik, user_email, bucket_name):
     return company_name
 
 def handler(event, context):
+    raw_cik = event.get('cik')
+    # Jika None, kosong (""), atau "auto", maka kita anggap MODE_AUTO = True
+    mode_auto = (not raw_cik) or (str(raw_cik).lower().strip() == 'auto')
+    
     user_email = os.environ.get('SEC_EMAIL')
     bucket_name = 'config-elt-bucket'
-    
-    raw_cik = event.get('cik')
-    # Jika 'auto' atau None, proses batch
-    is_auto = not raw_cik or str(raw_cik).lower() == 'auto'
-    
+
     try:
-        if not is_auto:
-            # Skenario 1: CIK Spesifik
-            cik_padded = str(raw_cik).zfill(10)
-            name = fetch_and_save_to_s3(cik_padded, user_email, bucket_name)
-            return {'statusCode': 200, 'body': json.dumps({'message': f'Sukses: {name}'})}
-        
-        else:
-            # Skenario 2: Auto Batch
+        if mode_auto:
+            print("Mode AUTO aktif: Mengambil data 10 pertama...")
             ciks = get_all_ciks()
             if not ciks:
-                raise Exception("Daftar CIK gagal diambil atau kosong.")
-                
-            start = event.get('start_index', 0)
-            target = ciks[start : start + 10]
+                raise Exception("DEBUG: Fungsi get_all_ciks() mengembalikan list kosong.")
             
-            results = []
-            for cik in target:
-                results.append(fetch_and_save_to_s3(cik, user_email, bucket_name))
-                time.sleep(0.15)
-                
-            return {'statusCode': 200, 'body': json.dumps({'companies': results})}
+            # Ambil 10 pertama
+            target_ciks = ciks[:10]
+            ingested = []
+            for cik in target_ciks:
+                name = fetch_and_save_to_s3(cik, user_email, bucket_name)
+                ingested.append(name)
+                time.sleep(0.2)
+            return {'statusCode': 200, 'body': json.dumps({'message': f'Auto success: {ingested}'})}
+
+        else:
+            # Mode Manual
+            print(f"Mode Manual aktif: {raw_cik}")
+            cik_padded = str(raw_cik).zfill(10)
+            name = fetch_and_save_to_s3(cik_padded, user_email, bucket_name)
+            return {'statusCode': 200, 'body': json.dumps({'message': f'Manual success: {name}'})}
             
     except Exception as e:
+        # Tampilkan error apa pun ke Lambda Response agar kita tahu penyebabnya
         return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
