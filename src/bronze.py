@@ -1,8 +1,11 @@
+from datetime 
+import datetime
 import os
 import requests
 import json
 import boto3
 import time
+
 
 def get_all_ciks():
     ticker_url = "https://www.sec.gov/files/company_tickers_exchange.json"
@@ -48,10 +51,11 @@ def fetch_and_save_to_s3(cik, user_email, bucket_name):
     response.raise_for_status()
     data = response.json()
 
+    today = datetime.now().strftime('%Y-%m-%d')
     ticker = data.get('ticker', 'UNKNOWN')
     
     s3 = boto3.client('s3')
-    file_name = f"bronze/YYYY-MM-DD/sec_data_{ticker}_{cik}.json"
+    file_name = f"bronze/{today}/sec_data_{ticker}_{cik}.json"
     
     s3.put_object(
         Bucket=bucket_name,
@@ -66,6 +70,8 @@ def handler(event, context):
     user_email = os.environ.get('SEC_EMAIL')
     bucket_name = 'config-elt-bucket'
     specific_cik = event.get('cik')
+    batch_size = 10
+    start_index = event.get('start_index', 0)
 
     try:
         if specific_cik:
@@ -86,7 +92,7 @@ def handler(event, context):
             if not ciks:
                 raise Exception("Daftar CIK kosong atau gagal diambil.")
                 
-            target_ciks = ciks[:10]
+            target_ciks = ciks[start_index : start_index + batch_size]
             ingested_companies = []
             
             for cik in target_ciks:
