@@ -86,7 +86,7 @@ def handler(event, context):
         else:
             # Skenario 2: Kalau payload kosong, jalankan otomatis untuk 10 perusahaan pertama
             print("Payload kosong, memproses 10 CIK pertama dari SEC...")
-            ciks = get_all_ciks(user_email)
+            ciks = get_all_ciks()
             
             if not ciks:
                 raise Exception("Daftar CIK kosong atau gagal diambil.")
