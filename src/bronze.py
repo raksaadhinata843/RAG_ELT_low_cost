@@ -7,6 +7,7 @@ from datetime import datetime
 
 def get_all_ciks():
     ticker_url = "https://www.sec.gov/files/company_tickers_exchange.json"
+    user_email = os.environ.get('SEC_EMAIL')
     headers = {
         'User-Agent': f'RaksaProject ({user_email})',
         'Accept-Encoding': 'gzip, deflate',
