@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       target_cik:
-        description: 'Masukkan nomor CIK (contoh: 0000320193)'
+        description: 'Masukkan CIK atau ketik "AUTO" untuk proses batch'
         required: false
         default: '0000320193'   
   schedule:
@@ -56,8 +56,10 @@ jobs:
         
         if [ -z "$INPUT_CIK" ]; then
           echo "{}" > payload.json
-        else
+        elif [ -n "$INPUT_CIK" ]; then
           echo "{\"cik\": \"$INPUT_CIK\"}" > payload.json
+        else
+          echo "{}" > payload.json
         fi
 
         echo "--- Isi payload.json ---"
