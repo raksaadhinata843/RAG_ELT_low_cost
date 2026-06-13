@@ -71,7 +71,7 @@ def fetch_and_save_to_s3(cik, user_email, bucket_name):
         Body=json.dumps(data),
         ContentType='application/json'
     )
-    return data.get company_name
+    return company_name
 
 
 def handler(event, context):
