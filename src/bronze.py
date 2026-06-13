@@ -19,6 +19,8 @@ def get_all_ciks():
         response.raise_for_status()
         raw_data = response.json()
 
+        print(f"DEBUG: Data dari SEC berhasil diambil. Jumlah entri: {len(raw_data.get('data', []))}")
+
         fields = raw_data["fields"]
         cik_idx = fields.index("cik")
         exchange_idx = fields.index("exchange")
