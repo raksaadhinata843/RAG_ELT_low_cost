@@ -27,7 +27,7 @@ def get_all_ciks():
 
         if "data" not in raw_data:
             raise Exception(f"Struktur data API berubah! Keys: {list(raw_data.keys())}")
-
+        data_rows = raw_data.get("data", [])
         nasdaq_ciks = []
 
         for row in raw_data["data"]:
