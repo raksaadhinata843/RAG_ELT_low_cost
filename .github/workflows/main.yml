@@ -52,14 +52,17 @@ jobs:
 
     - name: Trigger Lambda Function
       run: |
-        INPUT_CIK=$(echo "${{ github.event.inputs.target_cik }}" | tr '[:upper:]' '[:lower:]')
+        USER_INPUT="${{ github.event.inputs.target_cik }}"
         
-        if [ -z "$INPUT_CIK" ] || [ "$INPUT_CIK" == "auto" ]; then
-          echo "{}" > payload.json
+        if [ -z "$USER_INPUT" ]; then
+          echo "Nothing Input, Activate AUTO Mode..."
+          TARGET="auto"
         else
-          echo "{\"cik\": \"$INPUT_CIK\"}" > payload.json
+          TARGET=$(echo "$USER_INPUT" | tr '[:upper:]' '[:lower:]')
         fi
-
+        
+        echo "{\"cik\": \"$TARGET\"}" > payload.json
+        
         echo "--- Isi payload.json ---"
         cat payload.json
         
