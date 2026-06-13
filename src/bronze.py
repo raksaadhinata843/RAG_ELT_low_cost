@@ -59,6 +59,7 @@ def fetch_and_save_to_s3(cik, user_email, bucket_name):
     data = response.json()
 
     today = datetime.now().strftime('%Y-%m-%d')
+    company_name = data.get('name', data.get('entityName', 'Unknown Company'))
     ticker = data.get('ticker', 'UNKNOWN')
     
     s3 = boto3.client('s3')
@@ -70,7 +71,7 @@ def fetch_and_save_to_s3(cik, user_email, bucket_name):
         Body=json.dumps(data),
         ContentType='application/json'
     )
-    return data.get('entityName', 'Unknown Company')
+    return data.get company_name
 
 
 def handler(event, context):
