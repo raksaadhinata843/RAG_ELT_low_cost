@@ -98,7 +98,7 @@ def handler(event, context):
             ciks = get_all_ciks()
             
             if not ciks:
-                raise Exception("Daftar CIK kosong atau gagal diambil.")
+                raise Exception(f"DEBUG: CIKs list is empty. Logic check needed.")
                 
             target_ciks = ciks[start_index : start_index + batch_size]
             ingested_companies = []
