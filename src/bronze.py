@@ -28,7 +28,7 @@ def get_all_ciks():
         nasdaq_ciks = []
         for row in raw_data["data"]:
             exchange_val = str(row[exchange_idx]).lower()
-           if "nasdaq" in exchange_val:
+            if "nasdaq" in exchange_val:
                 cik_padded = str(row[cik_idx]).zfill(10)
                 nasdaq_ciks.append(cik_padded)
                
