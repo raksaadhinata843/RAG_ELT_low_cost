@@ -1,11 +1,9 @@
-from datetime 
-import datetime
 import os
 import requests
 import json
 import boto3
 import time
-
+from datetime import datetime
 
 def get_all_ciks():
     ticker_url = "https://www.sec.gov/files/company_tickers_exchange.json"
@@ -69,7 +67,8 @@ def fetch_and_save_to_s3(cik, user_email, bucket_name):
 def handler(event, context):
     user_email = os.environ.get('SEC_EMAIL')
     bucket_name = 'config-elt-bucket'
-    specific_cik = event.get('cik')
+    raw_cik = event.get('cik')
+    specific_cik = raw_cik if raw_cik and raw_cik.lower() != 'auto' else None
     batch_size = 10
     start_index = event.get('start_index', 0)
 
@@ -77,7 +76,7 @@ def handler(event, context):
         if specific_cik:
             # Skenario 1: Hanya proses CIK yang dikirim dari payload CLI
             print(f"Memproses CIK spesifik dari payload: {specific_cik}")
-            cik_padded = str(specific_cik).zfill(10)
+            cik_padded = str("auto").zfill(10)
             company_name = fetch_and_save_to_s3(cik_padded, user_email, bucket_name)
             
             return {
