@@ -5,65 +5,53 @@ import boto3
 import time
 from datetime import datetime
 
-def get_all_ciks():
-    ticker_url = "https://www.sec.gov/files/company_tickers_exchange.json"
-    user_email = os.environ.get('SEC_EMAIL')
-    headers = {
-        'User-Agent': f'RaksaProject ({user_email})',
-        'Accept-Encoding': 'gzip, deflate',
-        'Host': 'data.sec.gov'
+# Fungsi Helper untuk Header agar konsisten
+def get_sec_headers():
+    return {
+        'User-Agent': f'RaksaProject ({os.environ.get("SEC_EMAIL")})',
+        'Accept-Encoding': 'gzip, deflate'
     }
+
+def get_all_ciks():
+    # URL ini menggunakan domain www.sec.gov
+    ticker_url = "https://www.sec.gov/files/company_tickers_exchange.json"
     
     try:
-        response = requests.get(ticker_url, headers=headers)
+        response = requests.get(ticker_url, headers=get_sec_headers())
         response.raise_for_status()
         raw_data = response.json()
 
-        print(f"DEBUG: Data dari SEC berhasil diambil. Jumlah entri: {len(raw_data.get('data', []))}")
-
-        fields = raw_data["fields"]
+        # Gunakan get untuk keamanan
+        data_rows = raw_data.get("data", [])
+        fields = raw_data.get("fields", [])
+        
         cik_idx = fields.index("cik")
         exchange_idx = fields.index("exchange")
 
-        if "data" not in raw_data:
-            raise Exception(f"Struktur data API berubah! Keys: {list(raw_data.keys())}")
-        data_rows = raw_data.get("data", [])
         nasdaq_ciks = []
-
-        for row in raw_data["data"]:
-            exchange_val = str(row[exchange_idx]).lower()
-            if "nasdaq" in exchange_val:
-                cik_padded = str(row[cik_idx]).zfill(10)
-                nasdaq_ciks.append(cik_padded)
+        for row in data_rows:
+            # .strip() untuk antisipasi spasi tersembunyi
+            if "nasdaq" in str(row[exchange_idx]).strip().lower():
+                nasdaq_ciks.append(str(row[cik_idx]).zfill(10))
                
-        print(f"DEBUG: Total Nasdaq CIKs found: {len(nasdaq_ciks)}")
         return nasdaq_ciks
-
     except Exception as e:
-        print(f"Gagal mengambil daftar CIK Nasdaq: {str(e)}")
+        print(f"Error di get_all_ciks: {str(e)}")
         return []
 
 def fetch_and_save_to_s3(cik, user_email, bucket_name):
-    """Mengambil data spesifik satu perusahaan dari SEC dan simpan ke S3 Bronze"""
-    # SEC menggunakan CIK 10 digit tanpa format string aneh di URL data
+    # Data SEC menggunakan domain data.sec.gov
     company_data_url = f"https://data.sec.gov/submissions/CIK{cik}.json"
     
-    headers = {
-        'User-Agent': f'RaksaProject ({user_email})',
-        'Accept-Encoding': 'gzip, deflate',
-        'Host': 'data.sec.gov'
-    }
-    
-    response = requests.get(company_data_url, headers=headers)
+    response = requests.get(company_data_url, headers=get_sec_headers())
     response.raise_for_status()
     data = response.json()
 
-    today = datetime.now().strftime('%Y-%m-%d')
     company_name = data.get('name', data.get('entityName', 'Unknown Company'))
     ticker = data.get('ticker', 'UNKNOWN')
     
     s3 = boto3.client('s3')
-    file_name = f"bronze/{today}/sec_data_{ticker}_{cik}.json"
+    file_name = f"bronze/{datetime.now().strftime('%Y-%m-%d')}/sec_data_{ticker}_{cik}.json"
     
     s3.put_object(
         Bucket=bucket_name,
@@ -73,57 +61,36 @@ def fetch_and_save_to_s3(cik, user_email, bucket_name):
     )
     return company_name
 
-
 def handler(event, context):
-    print(f"DEBUG: Event received: {json.dumps(event)}") 
-    
     user_email = os.environ.get('SEC_EMAIL')
     bucket_name = 'config-elt-bucket'
+    
     raw_cik = event.get('cik')
-    specific_cik = raw_cik if raw_cik and raw_cik.lower() != 'auto' else None
-    batch_size = 10
-    start_index = event.get('start_index', 0)
-
+    # Jika 'auto' atau None, proses batch
+    is_auto = not raw_cik or str(raw_cik).lower() == 'auto'
+    
     try:
-        if specific_cik:
-            # Skenario 1: Hanya proses CIK yang dikirim dari payload CLI
-            print(f"Memproses CIK spesifik dari payload: {specific_cik}")
-            cik_padded = str(specific_cik).zfill(10) 
-
-            company_name = fetch_and_save_to_s3(cik_padded, user_email, bucket_name)
-            
-            return {
-                'statusCode': 200,
-                'body': json.dumps({'message': f'Sukses ingest data untuk {company_name}'})
-            }
+        if not is_auto:
+            # Skenario 1: CIK Spesifik
+            cik_padded = str(raw_cik).zfill(10)
+            name = fetch_and_save_to_s3(cik_padded, user_email, bucket_name)
+            return {'statusCode': 200, 'body': json.dumps({'message': f'Sukses: {name}'})}
+        
         else:
-            # Skenario 2: Kalau payload kosong, jalankan otomatis untuk 10 perusahaan pertama
-            print("Payload kosong, memproses 10 CIK pertama dari SEC...")
+            # Skenario 2: Auto Batch
             ciks = get_all_ciks()
-            
             if not ciks:
-                raise Exception(f"DEBUG: CIKs list is empty. Logic check needed.")
+                raise Exception("Daftar CIK gagal diambil atau kosong.")
                 
-            target_ciks = ciks[start_index : start_index + batch_size]
-            ingested_companies = []
+            start = event.get('start_index', 0)
+            target = ciks[start : start + 10]
             
-            for cik in target_ciks:
-                company_name = fetch_and_save_to_s3(cik, user_email, bucket_name)
-                ingested_companies.append(company_name)
-                # SEC punya batasan keras max 10 requests per second (RPS)
-                time.sleep(0.15) 
+            results = []
+            for cik in target:
+                results.append(fetch_and_save_to_s3(cik, user_email, bucket_name))
+                time.sleep(0.15)
                 
-            return {
-                'statusCode': 200,
-                'body': json.dumps({
-                    'message': f'Sukses mengunduh {len(ingested_companies)} perusahaan',
-                    'companies': ingested_companies
-                })
-            }
+            return {'statusCode': 200, 'body': json.dumps({'companies': results})}
             
     except Exception as e:
-        print(f"Error pada pipeline: {str(e)}")
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
