@@ -25,11 +25,14 @@ def get_all_ciks():
         cik_idx = fields.index("cik")
         exchange_idx = fields.index("exchange")
 
+        if "data" not in raw_data:
+            raise Exception(f"Struktur data API berubah! Keys: {list(raw_data.keys())}")
+
         nasdaq_ciks = []
         fields = raw_data["fields"]
         cik_idx = fields.index("cik")
         exchange_idx = fields.index("exchange")
-        
+
         for row in raw_data["data"]:
             exchange_val = str(row[exchange_idx]).lower()
             if "nasdaq" in exchange_val:
@@ -85,8 +88,7 @@ def handler(event, context):
         if specific_cik:
             # Skenario 1: Hanya proses CIK yang dikirim dari payload CLI
             print(f"Memproses CIK spesifik dari payload: {specific_cik}")
-            cik_padded = str("auto").zfill(10)
-            company_name = fetch_and_save_to_s3(cik_padded, user_email, bucket_name)
+            cik_padded = str(specific_cik).zfill(10) 
             
             return {
                 'statusCode': 200,
