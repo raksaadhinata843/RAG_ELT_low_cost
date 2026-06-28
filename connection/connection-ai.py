@@ -18,7 +18,7 @@ def text_to_sql_chat():
     con = duckdb.connect(f'md:?md_token={md_token}')
     
     # 2. Ambil Schema (Hanya nama kolom untuk hemat token & kuota)
-    columns = con.execute("SELECT column_name FROM (DESCRIBE silver_company_profiles)").fetchall()
+    columns = con.execute("SELECT comapny_name FROM (DESCRIBE silver_company_profiles)").fetchall()
     column_list = [col[0] for col in columns]
     
     # 3. Setup LLM
@@ -31,7 +31,7 @@ def text_to_sql_chat():
     # List model cadangan (Fallback chain)
     model_pool = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-1.5-flash"]
     
-    user_question = "Ada berapa banyak perusahaan yang terdaftar di exchange NASDAQ?"
+    user_question = "Nama perusahaan top 10 yang terdaftar di exchange NASDAQ?"
     prompt = f"""Write a DuckDB SQL query for table 'silver_company_profiles' with columns {column_list}.
     Question: {user_question}. Return ONLY SQL."""
 
@@ -49,7 +49,7 @@ def text_to_sql_chat():
             if e.code == 429:
                 print(f"-> Model {model_id} kena Rate Limit (429).")
             elif e.code == 404:
-                print(f"-> Model {model_id} Gak Ditemukan / Salah Nama (404).")
+                print(f"-> Model {model_id} Gak Ditemukan (404).")
             else:
                 print(f"-> API Error Lain ({e.code}) pada {model_id}: {e.message}")            
             if model_id != model_pool[-1]:
