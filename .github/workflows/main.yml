@@ -105,7 +105,7 @@ jobs:
         env:
           motherduck_token: ${{ secrets.MD_TOKEN }}
         run: |
-         ./duckdb md:Sec_DB < src/silver.sql
+         ./duckdb md:Sec_DB < src/silver.py
 
   gold:
 
