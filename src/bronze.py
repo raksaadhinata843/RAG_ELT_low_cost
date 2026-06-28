@@ -33,6 +33,9 @@ def get_all_ciks():
             # .strip() untuk antisipasi spasi tersembunyi
             if "nasdaq" in str(row[exchange_idx]).strip().lower():
                 nasdaq_ciks.append(str(row[cik_idx]).zfill(10))
+
+            if len(nasdaq_ciks) >= 10:
+                break
                
         return nasdaq_ciks
     except Exception as e:
