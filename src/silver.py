@@ -22,17 +22,17 @@ def get_latest_data():
     # 3. Masukkan ke query DuckDB
     query = f'''
     CREATE OR REPLACE TABLE silver_company_profiles AS
-    WITH raw_extracted AS (
+    WITH raw_data AS (
+        -- Tambahkan parameter format='array'
+        SELECT * FROM read_json_auto('{latest_path}', format='array')
+    ),
+    raw_extracted AS (
         SELECT 
             lpad(cik::VARCHAR, 10, '0') AS cik,
             upper(name) AS company_name,
-            list_extract(tickers, 1)::VARCHAR AS primary_ticker,
-            list_extract(exchanges, 1)::VARCHAR AS primary_exchange,
-            TRY_CAST(sic AS INTEGER) AS sic_code,
-            sicDescription AS industry,
-            entityType AS category,
-            fiscalYearEnd AS fiscal_year_end
-        FROM read_json_auto('{latest_path}')
+            ticker AS primary_ticker,
+            exchange AS primary_exchange
+        FROM raw_data
     )
     SELECT * FROM raw_extracted
     QUALIFY ROW_NUMBER() OVER (PARTITION BY cik ORDER BY company_name DESC) = 1;
