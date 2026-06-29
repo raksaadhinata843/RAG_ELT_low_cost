@@ -18,7 +18,7 @@ def text_to_sql_chat():
     con = duckdb.connect(f'md:?md_token={md_token}')
     
     # 2. Ambil Schema (Hanya nama kolom untuk hemat token & kuota)
-    columns = con.execute("SELECT comapny_name FROM (DESCRIBE silver_company_profiles)").fetchall()
+    columns = con.execute("SELECT company_name FROM (DESCRIBE silver_company_profiles)").fetchall()
     column_list = [col[0] for col in columns]
     
     # 3. Setup LLM
