@@ -20,7 +20,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # 1. Login ke AWS
+    - name: Prepare bundle
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt -t src/
+        cd src
+        zip -r ../bundle.zip .
+        cd ..
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
@@ -28,29 +35,17 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
-    # 2. Login ke Amazon ECR
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-
-    # 3. Build & Push Docker Image
-    - name: Build, tag, and push image to Amazon ECR
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: requirements_dock
-        IMAGE_TAG: latest
+    - name: Upload to S3
       run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        aws s3 cp bundle.zip s3://config-elt-bucket/deployments/lambda_ingest.zip
 
-    # 4. Update Lambda ke Image Baru
-    - name: Update Lambda Function
+    - name: Update Lambda from S3
       run: |
         aws lambda update-function-code \
           --function-name lambda_ingest \
-          --image-uri ${{ steps.login-ecr.outputs.registry }}/lambda_ingest_repo:latest
+          --s3-bucket config-elt-bucket \
+          --s3-key deployments/lambda_ingest.zip
 
-    # 5. Trigger Lambda Function (Tetap sama)
     - name: Trigger Lambda Function
       run: |
         INPUT_CIK="${{ github.event.inputs.target_cik }}"
