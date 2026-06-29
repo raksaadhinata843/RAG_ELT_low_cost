@@ -23,15 +23,16 @@ def get_latest_data():
     query = f'''
     CREATE OR REPLACE TABLE silver_company_profiles AS
     WITH raw_data AS (
-        -- Tambahkan parameter format='array'
-        SELECT * FROM read_json_auto('{latest_path}', format='array')
+        SELECT * FROM read_json_auto('{latest_path}')
     ),
     raw_extracted AS (
         SELECT 
             lpad(cik::VARCHAR, 10, '0') AS cik,
-            upper(name) AS company_name,
-            ticker AS primary_ticker,
-            exchange AS primary_exchange
+            name AS company_name,
+            list_extract(tickers, 1) AS primary_ticker,
+            list_extract(exchanges, 1) AS primary_exchange,
+            entityType AS category,
+            sicDescription AS industry
         FROM raw_data
     )
     SELECT * FROM raw_extracted
