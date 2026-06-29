@@ -16,67 +16,56 @@ on:
 jobs:
   bronze:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    # 1. Login ke AWS
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
       with:
-        python-version: '3.14'
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt -t src/
-        cd src
-        zip -r ../bundle.zip .
+    # 2. Login ke Amazon ECR
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Identifikasi AWS Account
+    # 3. Build & Push Docker Image
+    - name: Build, tag, and push image to Amazon ECR
       env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: lambda_ingest_repo # Pastikan nama repo sama di AWS ECR
+        IMAGE_TAG: latest
       run: |
-          aws sts get-caller-identity
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-    - name: Deploy to Lambda
-      uses: appleboy/lambda-action@v0.1.9
-      with:
-        aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws_region: us-east-1 
-        function_name: lambda_ingest
-        zip_file: bundle.zip
+    # 4. Update Lambda ke Image Baru
+    - name: Update Lambda Function
+      run: |
+        aws lambda update-function-code \
+          --function-name lambda_ingest \
+          --image-uri ${{ steps.login-ecr.outputs.registry }}/lambda_ingest_repo:latest
 
+    # 5. Trigger Lambda Function (Tetap sama)
     - name: Trigger Lambda Function
       run: |
         INPUT_CIK="${{ github.event.inputs.target_cik }}"
-        
-        # Jika input kosong atau 'auto' (case insensitive), set ke auto
         if [[ -z "$INPUT_CIK" || "${INPUT_CIK,,}" == "auto" ]]; then
           echo '{"cik": "auto"}' > payload.json
         else
-          # Pakai jq untuk memastikan JSON valid dan aman dari karakter aneh
           jq -n --arg cik "$INPUT_CIK" '{cik: $cik}' > payload.json
         fi
-
-        echo "--- Isi payload.json ---"
-        cat payload.json
         
         aws lambda invoke \
           --function-name lambda_ingest \
           --payload file://payload.json \
           --cli-binary-format raw-in-base64-out \
           response.json
-          
-        echo "--- Lambda Response ---"
         cat response.json
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: us-east-1
 
 
   silver:
