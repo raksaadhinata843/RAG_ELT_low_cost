@@ -52,7 +52,7 @@ def fetch_and_save_to_s3(cik, bucket_name):
     data = response.json()
 
     company_name = data.get('name') or data.get('entityName', 'Unknown')
-    ticker = data.get('ticker', 'UNKNOWN')
+    ticker = data.get('tickers', 'UNKNOWN')
     
     file_key = f"bronze/{datetime.now().strftime('%Y-%m-%d')}/sec_data_{ticker}_{cik}.json"
     
