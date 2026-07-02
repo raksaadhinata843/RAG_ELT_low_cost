@@ -15,6 +15,36 @@ def get_sec_headers():
         'Accept-Encoding': 'gzip, deflate'
     }
 
+def get_all_ciks():
+    # URL ini menggunakan domain www.sec.gov
+    ticker_url = "https://www.sec.gov/files/company_tickers_exchange.json"
+    
+    try:
+        response = requests.get(ticker_url, headers=get_sec_headers())
+        response.raise_for_status()
+        raw_data = response.json()
+
+        # Gunakan get untuk keamanan
+        data_rows = raw_data.get("data", [])
+        fields = raw_data.get("fields", [])
+        
+        cik_idx = fields.index("cik")
+        exchange_idx = fields.index("exchange")
+
+        nasdaq_ciks = []
+        for row in data_rows:
+            # .strip() untuk antisipasi spasi tersembunyi
+            if "nasdaq" in str(row[exchange_idx]).strip().lower():
+                nasdaq_ciks.append(str(row[cik_idx]).zfill(10))
+
+            if len(nasdaq_ciks) >= 10:
+                break
+               
+        return nasdaq_ciks
+    except Exception as e:
+        print(f"Error di get_all_ciks: {str(e)}")
+        return []
+
 def fetch_and_save_to_s3(cik, bucket_name):
     url = f"https://data.sec.gov/submissions/CIK{cik}.json"
     response = session.get(url, headers=get_sec_headers())
