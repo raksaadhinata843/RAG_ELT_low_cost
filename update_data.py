@@ -3,11 +3,7 @@ import duckdb
 import json
 
 def main():
-  token = os.environ("MD_TOKEN")
-  if not token:
-    raise ValueError("TOKEN tidak ditemukan dienvironment variables")
-  
-  con = duckdb.connect(f"md:?motherduck_token={token}")
+  con = duckdb.connect(f'md:?md_token={os.environ["MD_TOKEN"]}')
   
   query = """
   SELECT * 
