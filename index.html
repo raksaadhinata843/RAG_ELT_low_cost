@@ -55,7 +55,7 @@
         async function initDashboard() {
             try {
                 // Fetch file JSON statis yang di-update oleh GitHub Actions
-                const response = await fetch('data/metrics.json');
+                const response = await fetch('.data/metrics.json');
                 if (!response.ok) throw new Error('Gagal mengambil file JSON');
                 
                 const data = await response.json();
