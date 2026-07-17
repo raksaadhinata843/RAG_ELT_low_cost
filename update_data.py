@@ -7,8 +7,7 @@ def main():
   
   query = """
   SELECT * 
-  FROM "Sec_DB"."main"."gold_company_profiles"
-  ORDER BY timestamp DESC;
+  FROM "Sec_DB"."main"."gold_company_profiles";
   """
   
   df = con.sql(query).df()
