@@ -4,7 +4,7 @@ import json
 def main():
 # Ambil token dari environment variable
 token = os.environ.get("MD_TOKEN")
-if not token: 
+if not token:
   raise ValueError("TOKEN tidak ditemukan dienvironment variables")
 # Koneksi ke MotherDuck
 # Token dimasukkan ke dalam connection string sa_api_key
