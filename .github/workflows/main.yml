@@ -136,7 +136,7 @@ jobs:
         run: |
           python connection/connection-ai.py
 
-      - name: Run Dashboarding
+      - name: Run ETL Dashboarding
         env:
           motherduck_token: ${{ secrets.MD_TOKEN }}
         run: |
