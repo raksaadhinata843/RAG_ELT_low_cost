@@ -138,6 +138,6 @@ jobs:
 
       - name: Run ETL Script
         env:
-          motherduck_token: ${{ secrets.MD_TOKEN }}
+          MD_TOKEN: ${{ secrets.MD_TOKEN }}
         run: |
           python update_data.py
