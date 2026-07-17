@@ -3,7 +3,7 @@ import duckdb
 import json
 
 def main():
-  token = os.environ.get("MD_TOKEN")
+  token = os.environ("MD_TOKEN")
   if not token:
     raise ValueError("TOKEN tidak ditemukan dienvironment variables")
   
