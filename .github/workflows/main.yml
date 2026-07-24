@@ -114,7 +114,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-         pip install duckdb google-genai pandas
+         pip install duckdb==1.5.4 google-genai pandas --force-reinstall
 
       - name: Install DuckDB CLI
         run: |
